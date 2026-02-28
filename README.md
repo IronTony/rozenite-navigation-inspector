@@ -14,7 +14,7 @@ Visualize your navigation tree, browse the sitemap, inspect route details, track
 - **Sitemap view**: Browse all available routes from Expo Router's compile-time route tree, with visited-route tracking
 - **Route details panel**: Inspect params, path, key, and navigator type for any selected node
 - **Navigation timeline**: Chronological log of navigation events (push, pop, replace, tab-switch, etc.) with from/to route info
-- **Navigation console**: Type a route path, pick an action (navigate / push / replace), pass JSON params, and go — with autocomplete from all known routes
+- **Navigation console**: Type a route path, pick an action (navigate / push / replace), pass JSON params, and go with autocomplete from all known routes
 - **Route autocomplete**: Fuzzy-matched suggestions from the sitemap, navigation tree, and device route list combined
 - **Dynamic route detection**: Sitemap highlights dynamic segments (`[id]`, `[...slug]`) with their parameter names
 - **Resizable panels**: Drag handles between sidebar, tree, details, and timeline to customize the layout
@@ -43,7 +43,7 @@ Add `useNavigationInspector` in your root layout, alongside your other Rozenite 
 import { useNavigationInspector } from 'rozenite-navigation-inspector';
 
 export default function RootLayout() {
-  // Safe to call unconditionally — no-ops in production
+  // Safe to call unconditionally. no-ops in production
   useNavigationInspector();
 
   return <Stack />;
@@ -104,7 +104,7 @@ The panel renders inside the Rozenite DevTools as an iframe and:
 
 ### `useNavigationInspector()`
 
-React hook that connects to the Rozenite DevTools and sends live navigation state updates. Safe to call unconditionally — in production, the hook is replaced with a no-op at the entry-point level, so no devtools code is bundled.
+React hook that connects to the Rozenite DevTools and sends live navigation state updates. Safe to call unconditionally. In production, the hook is replaced with a no-op at the entry-point level, so no devtools code is bundled.
 
 Takes no arguments. Internally uses `useNavigationContainerRef()` from Expo Router and the `router` object to observe and control navigation.
 

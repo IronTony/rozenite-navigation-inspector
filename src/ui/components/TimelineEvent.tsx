@@ -56,7 +56,7 @@ export function TimelineEventRow({ event }: TimelineEventProps) {
               <span className="timeline-event__route-arrow">&rarr;</span>
             </>
           )}
-          <span className="timeline-event__route-to">{event.toRoute?.name || '—'}</span>
+          <span className="timeline-event__route-to">{event.toRoute?.name || 'N/A'}</span>
         </span>
 
         <span className="timeline-event__time">{time}</span>
