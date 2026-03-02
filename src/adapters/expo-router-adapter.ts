@@ -2,7 +2,6 @@ import type { NavigationContainerRefWithCurrent, ParamListBase } from '@react-na
 import type { NavigationState } from '@react-navigation/routers'
 import type { Router } from 'expo-router'
 import type { RouteNode } from 'expo-router/build/Route'
-import { store as expoRouterStore } from 'expo-router/build/global-state/router-store'
 import type { NavigationAdapter } from './types'
 import type { NavigationEvent, SitemapEntry } from '../shared/types'
 import { buildTreeFromState, extractFocusedRoute, collectRouteNames } from '../tree-builder'
@@ -165,7 +164,8 @@ export function createExpoRouterAdapter(
 
     getAllRoutes() {
       try {
-        const routeNode = expoRouterStore.routeNode
+        const { store: routerStore } = require('expo-router/build/global-state/router-store')
+        const routeNode = routerStore.routeNode
         if (routeNode) {
           return collectRoutesFromRouteNode(routeNode)
         }
@@ -179,7 +179,8 @@ export function createExpoRouterAdapter(
 
     getSitemap(): SitemapEntry[] {
       try {
-        const routeNode = expoRouterStore.routeNode
+        const { store: routerStore } = require('expo-router/build/global-state/router-store')
+        const routeNode = routerStore.routeNode
         if (routeNode) {
           return buildSitemapFromRouteNode(routeNode, visitedRoutes)
         }
