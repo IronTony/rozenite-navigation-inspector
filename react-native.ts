@@ -6,10 +6,10 @@ export let useNavigationInspector: () => void
 
 if (isDev && isReactNative && !isServer) {
   useNavigationInspector =
-    require('./useNavigationInspectorNative').useNavigationInspectorNative
+    require('./src/useNavigationInspectorNative').useNavigationInspectorNative
 } else {
   useNavigationInspector = () => {}
 }
 
-export type { NavigationAdapter } from './adapters/types'
-export type { NavigationTree, RouteInfo, NavigationEvent, SitemapEntry } from './shared/types'
+export type { NavigationAdapter } from './src/adapters/types'
+export type { NavigationTree, RouteInfo, NavigationEvent, SitemapEntry } from './src/shared/types'

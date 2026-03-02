@@ -7,5 +7,5 @@ export default {
       source: './src/ui/panel.tsx',
     },
   ],
-  reactNative: './src/react-native.ts',
+  reactNative: './react-native.ts',
 }
