@@ -2,13 +2,13 @@ const isDev = process.env.NODE_ENV !== 'production'
 const isServer = typeof window === 'undefined'
 const isReactNative = typeof navigator !== 'undefined' && navigator.product === 'ReactNative'
 
-export let useNavigationInspector: () => void
+export let useNavigationInspector: () => { current: any } | undefined
 
 if (isDev && isReactNative && !isServer) {
   useNavigationInspector =
     require('./src/useNavigationInspectorNative').useNavigationInspectorNative
 } else {
-  useNavigationInspector = () => {}
+  useNavigationInspector = () => undefined
 }
 
 export type { NavigationAdapter } from './src/adapters/types'

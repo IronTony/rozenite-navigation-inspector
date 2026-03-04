@@ -35,7 +35,7 @@ npm install -D rozenite-navigation-inspector
 
 ## Setup
 
-### 1. Call the hook in your root layout
+### Expo Router
 
 Add `useNavigationInspector` in your root layout, alongside your other Rozenite hooks:
 
@@ -43,18 +43,46 @@ Add `useNavigationInspector` in your root layout, alongside your other Rozenite 
 import { useNavigationInspector } from 'rozenite-navigation-inspector';
 
 export default function RootLayout() {
-  // Safe to call unconditionally. no-ops in production
+  // Safe to call unconditionally — no-ops in production
   useNavigationInspector();
 
   return <Stack />;
 }
 ```
 
-### 2. Start with Rozenite enabled
+Start with Rozenite enabled:
 
 ```bash
 WITH_ROZENITE=true npx expo start -c
 ```
+
+### React Navigation (without Expo Router)
+
+Call `useNavigationInspector` where your `NavigationContainer` is rendered and pass the returned ref:
+
+```tsx
+import { NavigationContainer } from '@react-navigation/native';
+import { useNavigationInspector } from 'rozenite-navigation-inspector';
+
+function App() {
+  // Returns a navigationRef to connect the inspector to your container
+  const navigationRef = useNavigationInspector();
+
+  return (
+    <NavigationContainer ref={navigationRef}>
+      {/* Your navigators */}
+    </NavigationContainer>
+  );
+}
+```
+
+Start with Rozenite enabled:
+
+```bash
+WITH_ROZENITE=true npx react-native start
+```
+
+> **Note:** The hook auto-detects which router is available at runtime. If `expo-router` is installed it uses the Expo Router adapter with full sitemap and file-based routing support. Otherwise it falls back to a React Navigation adapter that works with state-based route discovery.
 
 Open the Rozenite DevTools and you'll see a **Navigation Inspector** tab with your app's full navigation state.
 
@@ -67,7 +95,7 @@ The plugin has two parts that communicate over Rozenite's WebSocket bridge:
 The `useNavigationInspector` hook:
 
 1. Connects to the Rozenite DevTools host via `useRozeniteDevToolsClient` from `@rozenite/plugin-bridge`
-2. Creates an Expo Router adapter using `useNavigationContainerRef` and `expo-router`'s router
+2. Auto-detects whether Expo Router or React Navigation is available and creates the appropriate adapter
 3. Sends an initial snapshot of the navigation tree, active route, sitemap, and route list on mount
 4. Subscribes to navigation state changes via `addListener('state', ...)`
 5. On any state change, diffs the previous and current state to classify the event (push, pop, replace, tab-switch, etc.) and sends the updated tree + event to the panel
@@ -106,7 +134,11 @@ The panel renders inside the Rozenite DevTools as an iframe and:
 
 React hook that connects to the Rozenite DevTools and sends live navigation state updates. Safe to call unconditionally. In production, the hook is replaced with a no-op at the entry-point level, so no devtools code is bundled.
 
-Takes no arguments. Internally uses `useNavigationContainerRef()` from Expo Router and the `router` object to observe and control navigation.
+Returns a `navigationRef` that React Navigation users should pass to their `<NavigationContainer ref={navigationRef}>`. Expo Router users can ignore the return value.
+
+The hook auto-detects the available router at runtime:
+- **Expo Router**: Uses the Expo Router adapter with full sitemap, file-based routing, and `router.push/replace/navigate`
+- **React Navigation**: Uses the React Navigation adapter with state-based route discovery and `CommonActions/StackActions`
 
 ### Types
 
@@ -158,7 +190,7 @@ type SitemapEntry = {
 
 ### Adapter interface
 
-The plugin uses a `NavigationAdapter` interface, making it possible to support other navigation libraries in the future:
+The plugin uses a `NavigationAdapter` interface with two built-in implementations (`expo-router` and `react-navigation`):
 
 ```typescript
 interface NavigationAdapter {
@@ -175,13 +207,13 @@ interface NavigationAdapter {
 
 ## Compatibility
 
-| Dependency | Version |
-|------------|---------|
-| Rozenite | >= 1.3.0 |
-| Expo Router | >= 4.0.0 |
-| React Navigation | >= 7.0.0 |
-| React Native | >= 0.70 |
-| React | >= 18 |
+| Dependency | Version | Required |
+|------------|---------|----------|
+| Rozenite | >= 1.3.0 | Yes |
+| React Navigation | >= 7.0.0 | Yes |
+| Expo Router | >= 4.0.0 | Optional |
+| React Native | >= 0.70 | Yes |
+| React | >= 18 | Yes |
 
 ## License
 

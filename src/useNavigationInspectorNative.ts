@@ -1,7 +1,8 @@
 import { useRozeniteDevToolsClient } from '@rozenite/plugin-bridge'
 import { useEffect, useRef } from 'react'
-import { useNavigationContainerRef, router as expoRouter } from 'expo-router'
-import { createExpoRouterAdapter } from './adapters/expo-router-adapter'
+import { useNavigationContainerRef } from '@react-navigation/native'
+import type { NavigationContainerRefWithCurrent, ParamListBase } from '@react-navigation/native'
+import { createReactNavigationAdapter } from './adapters/react-navigation-adapter'
 import type { NavigationAdapter } from './adapters/types'
 import type { NavigationInspectorEventMap } from './shared/event-map'
 import type { NavigationEvent } from './shared/types'
@@ -10,13 +11,79 @@ const PLUGIN_ID = 'rozenite-navigation-inspector'
 const MAX_TIMELINE_SIZE = 200
 const READY_POLL_MS = 500
 
-export function useNavigationInspectorNative(): void {
+// Lazy expo-router detection (cached after first call)
+let _expoRouterDetected: boolean | null = null
+let _expoRouterModule: any = null
+
+function getExpoRouter(): any | null {
+  if (_expoRouterDetected !== null) {
+    return _expoRouterDetected ? _expoRouterModule : null
+  }
+  try {
+    _expoRouterModule = require('expo-router')
+    _expoRouterDetected = true
+    return _expoRouterModule
+  } catch {
+    _expoRouterDetected = false
+    return null
+  }
+}
+
+function tryCreateExpoSetup(
+  fallbackRef: NavigationContainerRefWithCurrent<ParamListBase>
+): {
+  adapter: NavigationAdapter
+  navigationRef: NavigationContainerRefWithCurrent<ParamListBase>
+} | null {
+  const expoRouter = getExpoRouter()
+  if (!expoRouter) return null
+
+  try {
+    const { createExpoRouterAdapter } = require('./adapters/expo-router-adapter')
+    // Access expo-router's singleton navigationRef directly from the store
+    // to avoid calling useNavigationContainerRef as a conditional hook
+    const { store } = require('expo-router/build/global-state/router-store')
+    const expoNavRef = store.navigationRef as NavigationContainerRefWithCurrent<ParamListBase>
+
+    if (expoNavRef) {
+      return {
+        adapter: createExpoRouterAdapter(expoNavRef, expoRouter.router),
+        navigationRef: expoNavRef,
+      }
+    }
+  } catch {
+    // expo-router internals not accessible, fall back to React Navigation
+  }
+
+  return null
+}
+
+export function useNavigationInspectorNative(): { current: any } {
   const client = useRozeniteDevToolsClient<NavigationInspectorEventMap>({
     pluginId: PLUGIN_ID,
   })
 
-  const navigationRef = useNavigationContainerRef()
-  const adapterRef = useRef<NavigationAdapter | null>(null)
+  // Always create a React Navigation ref (used when expo-router is not available)
+  const rnNavigationRef = useNavigationContainerRef() as unknown as NavigationContainerRefWithCurrent<ParamListBase>
+
+  const setupRef = useRef<{
+    adapter: NavigationAdapter
+    navigationRef: NavigationContainerRefWithCurrent<ParamListBase>
+  } | null>(null)
+
+  if (setupRef.current === null) {
+    const expoSetup = tryCreateExpoSetup(rnNavigationRef)
+    if (expoSetup) {
+      setupRef.current = expoSetup
+    } else {
+      setupRef.current = {
+        adapter: createReactNavigationAdapter(rnNavigationRef),
+        navigationRef: rnNavigationRef,
+      }
+    }
+  }
+
+  const { adapter, navigationRef } = setupRef.current
   const timelineRef = useRef<NavigationEvent[]>([])
   const rafRef = useRef<number | null>(null)
 
@@ -32,9 +99,6 @@ export function useNavigationInspectorNative(): void {
     let navigateSub: { remove: () => void } | null = null
 
     try {
-      const adapter = createExpoRouterAdapter(navigationRef, expoRouter)
-      adapterRef.current = adapter
-
       const sendSnapshot = () => {
         try {
           const tree = adapter.getTree()
@@ -147,4 +211,6 @@ export function useNavigationInspectorNative(): void {
       }
     }
   }, [client, navigationRef])
+
+  return navigationRef
 }
