@@ -1,6 +1,6 @@
 {
   "name": "rozenite-navigation-inspector",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Rozenite DevTools plugin for inspecting navigation state in Expo Router / React Navigation apps",
   "license": "MIT",
   "author": "IronTony",

@@ -2,6 +2,7 @@ import { useRozeniteDevToolsClient } from '@rozenite/plugin-bridge'
 import { useEffect, useRef } from 'react'
 import { useNavigationContainerRef } from '@react-navigation/native'
 import type { NavigationContainerRefWithCurrent, ParamListBase } from '@react-navigation/native'
+import { createExpoRouterAdapter } from './adapters/expo-router-adapter'
 import { createReactNavigationAdapter } from './adapters/react-navigation-adapter'
 import type { NavigationAdapter } from './adapters/types'
 import type { NavigationInspectorEventMap } from './shared/event-map'
@@ -39,9 +40,6 @@ function tryCreateExpoSetup(
   if (!expoRouter) return null
 
   try {
-    const { createExpoRouterAdapter } = require('./adapters/expo-router-adapter')
-    // Access expo-router's singleton navigationRef directly from the store
-    // to avoid calling useNavigationContainerRef as a conditional hook
     const { store } = require('expo-router/build/global-state/router-store')
     const expoNavRef = store.navigationRef as NavigationContainerRefWithCurrent<ParamListBase>
 
