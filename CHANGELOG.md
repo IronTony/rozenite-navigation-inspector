@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.2.0] - 2026-07-04
+
+### Added
+
+- **Test suite**: Jest + ts-jest + Testing Library covering the adapters, tree/state/sitemap builders, the runtime resolver, and the native hook. New `typecheck`, `test`, and `test:coverage` scripts.
+- `@react-navigation/native` is now an optional peer dependency via `peerDependenciesMeta`.
+
+### Changed
+
+- Navigation runtime (`StackActions`, `CommonActions`, `useNavigationContainerRef`) is resolved at module load from `expo-router` or `@react-navigation/native` via the new `shared/navigation-runtime` module.
+- Source decoupled from hard `@react-navigation/native` imports using structural `NavigationRefLike` / `NavigationStateLike` types.
+- `tsconfig` lib bumped from ES2020 to ES2021.
+
+### Fixed
+
+- React Navigation adapter no longer dispatches when the resolved action creators are absent (null guards on `StackActions` / `CommonActions`).
+
 ## [1.1.0] - 2026-03-04
 
 ### Added
