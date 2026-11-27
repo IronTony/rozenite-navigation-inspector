@@ -51,3 +51,12 @@ export type RouteNodeLike = {
   generated?: boolean;
   dynamic: Array<{ name: string }> | null;
 };
+
+// Structural shape of the public Expo Router useSitemap() result.
+export type ExpoSitemapNode = {
+  contextKey: string;
+  href: string | { pathname: string };
+  isInternal: boolean;
+  isGenerated: boolean;
+  children: ExpoSitemapNode[];
+};
