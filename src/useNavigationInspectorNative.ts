@@ -1,7 +1,7 @@
 import { useRozeniteDevToolsClient } from '@rozenite/plugin-bridge';
 import { useEffect, useRef } from 'react';
 import { useNavigationContainerRef } from './shared/navigation-runtime';
-import type { NavigationRefLike } from './shared/navigation-types';
+import type { ExpoSitemapNode, NavigationRefLike } from './shared/navigation-types';
 import { createExpoRouterAdapter } from './adapters/expo-router-adapter';
 import { createReactNavigationAdapter } from './adapters/react-navigation-adapter';
 import type { NavigationAdapter } from './adapters/types';
@@ -30,12 +30,19 @@ function getExpoRouter(): any | null {
   }
 }
 
-function tryCreateExpoSetup(fallbackRef: NavigationRefLike): {
+// Selected once per app so the hook order never depends on Router state.
+const useExpoSitemap: () => ExpoSitemapNode | null =
+  getExpoRouter()?.useSitemap ?? (() => null);
+
+function tryCreateExpoSetup(
+  fallbackRef: NavigationRefLike,
+  getExpoSitemap: () => ExpoSitemapNode | null,
+): {
   adapter: NavigationAdapter;
   navigationRef: NavigationRefLike;
 } | null {
   const expoRouter = getExpoRouter();
-  if (!expoRouter) return null;
+  if (!expoRouter?.router) return null;
 
   try {
     const { store } = require('expo-router/build/global-state/router-store');
@@ -48,10 +55,15 @@ function tryCreateExpoSetup(fallbackRef: NavigationRefLike): {
       };
     }
   } catch {
-    // expo-router internals not accessible, fall back to React Navigation
+    // SDK 58 no longer ships the private store.
   }
 
-  return null;
+  // SDK 58's public hook returns the live Expo Router navigation ref.
+  if (typeof expoRouter.useNavigationContainerRef !== 'function') return null;
+  return {
+    adapter: createExpoRouterAdapter(fallbackRef, expoRouter.router, getExpoSitemap),
+    navigationRef: fallbackRef,
+  };
 }
 
 export function useNavigationInspectorNative(): { current: any } {
@@ -59,9 +71,13 @@ export function useNavigationInspectorNative(): { current: any } {
     pluginId: PLUGIN_ID,
   });
 
-  // Always create a navigation ref (used when expo-router is not available).
-  // The hook is resolved at module load from expo-router or @react-navigation.
+  // This is the live Expo ref, or a new ref for a standalone NavigationContainer.
   const rnNavigationRef = useNavigationContainerRef();
+  const expoSitemap = useExpoSitemap();
+  const expoSitemapRef = useRef<ExpoSitemapNode | null>(null);
+  useEffect(() => {
+    expoSitemapRef.current = expoSitemap;
+  }, [expoSitemap]);
 
   const setupRef = useRef<{
     adapter: NavigationAdapter;
@@ -69,7 +85,7 @@ export function useNavigationInspectorNative(): { current: any } {
   } | null>(null);
 
   if (setupRef.current === null) {
-    const expoSetup = tryCreateExpoSetup(rnNavigationRef);
+    const expoSetup = tryCreateExpoSetup(rnNavigationRef, () => expoSitemapRef.current);
     if (expoSetup) {
       setupRef.current = expoSetup;
     } else {
@@ -209,9 +225,10 @@ export function useNavigationInspectorNative(): { current: any } {
       navigateSub?.remove();
       if (rafRef.current !== null) {
         cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
       }
     };
-  }, [client, navigationRef]);
+  }, [adapter, client, expoSitemap]);
 
   return navigationRef;
 }
