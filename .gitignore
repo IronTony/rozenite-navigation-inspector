@@ -3,3 +3,6 @@ dist/
 coverage/
 *.tgz
 .DS_Store
+
+# Rozenite generated build configuration
+.rozenite/

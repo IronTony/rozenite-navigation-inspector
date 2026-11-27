@@ -24,7 +24,7 @@ Visualize your navigation tree, browse the sitemap, inspect route details, track
 
 ## Prerequisites
 
-- [Rozenite](https://github.com/callstackincubator/rozenite) integrated in your React Native project
+- [Rozenite](https://github.com/callstackincubator/rozenite) 2.8+ integrated in your React Native project
 - [Expo Router](https://docs.expo.dev/router/introduction/) >= 4.0.0 or [React Navigation](https://reactnavigation.org/) >= 7.0.0
 
 ## Installation
@@ -40,6 +40,7 @@ npm install -D rozenite-navigation-inspector
 Add `useNavigationInspector` in your root layout, alongside your other Rozenite hooks:
 
 ```tsx
+import { Stack } from 'expo-router';
 import { useNavigationInspector } from 'rozenite-navigation-inspector';
 
 export default function RootLayout() {
@@ -49,6 +50,8 @@ export default function RootLayout() {
   return <Stack />;
 }
 ```
+
+On Expo SDK 58, the plugin uses Expo Router’s public navigation ref and sitemap. No change to the hook call is required.
 
 Start with Rozenite enabled:
 

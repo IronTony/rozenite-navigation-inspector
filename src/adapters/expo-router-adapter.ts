@@ -1,5 +1,6 @@
 import type {
   ExpoRouterLike,
+  ExpoSitemapNode,
   NavigationRefLike,
   NavigationStateLike as NavigationState,
   RouteNodeLike as RouteNode,
@@ -103,9 +104,61 @@ function buildSitemapFromRouteNode(
   return entries;
 }
 
+// The public Expo sitemap includes layout nodes and app-internal files.
+function buildSitemapFromExpo(
+  node: ExpoSitemapNode,
+  visitedRoutes: Set<string>,
+  parentHref = '',
+  isRoot = true,
+): SitemapEntry[] {
+  const href = typeof node.href === 'string' ? node.href : node.href.pathname;
+  const layout = /(?:^|\/)_layout\.[^/]+$/.test(node.contextKey);
+  if (!isRoot && !layout &&
+      (node.isInternal || node.isGenerated || /\+api\.[^/]+$/.test(node.contextKey))) {
+    return [];
+  }
+
+  const children = node.children.flatMap((child) =>
+    buildSitemapFromExpo(child, visitedRoutes, href, false),
+  );
+  if (isRoot || layout) return children;
+
+  const relativeHref = parentHref === '/'
+    ? href.slice(1)
+    : href === parentHref
+      ? ''
+      : href.startsWith(parentHref + '/')
+        ? href.slice(parentHref.length + 1)
+        : href.replace(/^\//, '');
+  // Expo's sitemap appends a numeric example segment to deep dynamic routes.
+  const stripSample = (value: string) => value.replace(/(\[\.\.\.[^\]]+\])\/\d+$/, '$1');
+  const name = stripSample(relativeHref) || 'index';
+  const path = '/' + stripSample(href)
+    .split('/')
+    .filter((segment) => segment && !(segment.startsWith('(') && segment.endsWith(')')))
+    .join('/');
+  const dynamicSegments = [...name.matchAll(/\[(?:\.\.\.)?([^\]]+)\]/g)].map((match) => match[1]);
+  const hasBeenVisited = visitedRoutes.has(name);
+
+  return [{
+    path,
+    name,
+    isDynamic: dynamicSegments.length > 0,
+    dynamicSegments,
+    hasBeenVisited,
+    lastVisited: hasBeenVisited ? Date.now() : undefined,
+    children,
+  }];
+}
+
+function sitemapPaths(entries: SitemapEntry[]): string[] {
+  return [...new Set(entries.flatMap((entry) => [entry.path, ...sitemapPaths(entry.children)]))];
+}
+
 export function createExpoRouterAdapter(
   navigationRef: NavigationRefLike,
   expoRouter: ExpoRouterLike,
+  getExpoSitemap?: () => ExpoSitemapNode | null,
 ): NavigationAdapter {
   let previousState: NavigationState | undefined;
   const visitedRoutes = new Set<string>();
@@ -195,6 +248,8 @@ export function createExpoRouterAdapter(
       } catch {
         // store.routeNode access failed, fall through to state-based approach
       }
+      const sitemap = getExpoSitemap?.();
+      if (sitemap) return sitemapPaths(buildSitemapFromExpo(sitemap, visitedRoutes));
       const state = navigationRef.getRootState();
       if (!state) return [];
       return collectRouteNames(state);
@@ -212,6 +267,8 @@ export function createExpoRouterAdapter(
       } catch {
         // fall through to state-based approach
       }
+      const sitemap = getExpoSitemap?.();
+      if (sitemap) return buildSitemapFromExpo(sitemap, visitedRoutes);
       const state = navigationRef.getRootState();
       if (!state) return [];
       return buildSitemapFromState(state, visitedRoutes);

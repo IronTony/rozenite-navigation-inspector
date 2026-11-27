@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+- Update the Rozenite build and plugin bridge to 2.8.
+- Restore Expo Router inspection on SDK 58, including the live navigation ref and routes not yet mounted.
+- Keep the older Expo Router and standalone React Navigation paths.
+
 ## [1.2.0] - 2026-07-04
 
 ### Added

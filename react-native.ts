@@ -6,7 +6,8 @@ export let useNavigationInspector: () => { current: any } | undefined
 
 if (isDev && isReactNative && !isServer) {
   useNavigationInspector =
-    require('./src/useNavigationInspectorNative').useNavigationInspectorNative
+    (require('./src/useNavigationInspectorNative') as typeof import('./src/useNavigationInspectorNative'))
+      .useNavigationInspectorNative
 } else {
   useNavigationInspector = () => undefined
 }
